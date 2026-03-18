@@ -1,0 +1,13 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# VS Code
+.vscode/
