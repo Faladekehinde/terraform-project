@@ -1,7 +1,5 @@
 module "webserver_cluster" {
-  source = "../../modules/services/webserver-cluster"
-
-  cluster_name = var.cluster_name
+  source = "github.com/Faladekehinde/terraform-project.git//modules/services/webserver-cluster?ref=v0.0.1"
   environment  = var.environment
   aws_region   = var.aws_region
 
