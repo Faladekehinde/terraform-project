@@ -1,6 +1,6 @@
 module "webserver_cluster" {
-  source = "../../modules/services/webserver-cluster"
-
+  source = "github.com/Faladekehinde/terraform-project.git//terraform/modules/services/webserver-cluster?ref=v0.0.1"
+  # production stays pinned to the stable version
   cluster_name = var.cluster_name
   environment  = var.environment
   aws_region   = var.aws_region
