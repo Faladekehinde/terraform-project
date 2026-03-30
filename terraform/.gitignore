@@ -1,0 +1,12 @@
+# Terraform files to ignore
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
+
+.terraform.lock.hcl
+
+# OS files
+.DS_Store
+Thumbs.db
