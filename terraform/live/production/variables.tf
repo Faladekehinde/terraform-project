@@ -21,14 +21,11 @@ variable "vpc_cidr" {
   default     = "10.1.0.0/16"
 }
 
-variable "subnet_1_cidr" {
-  type    = string
-  default = "10.1.1.0/24"
-}
-
-variable "subnet_2_cidr" {
-  type    = string
-  default = "10.1.2.0/24"
+variable "subnets" {
+  type         = map(object({
+    cidr_block = string
+    az_index   = number
+  }))
 }
 
 variable "server_port" {
@@ -44,7 +41,7 @@ variable "ssh_port" {
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string
-  default     = "t3.small"
+  default     = "t3.medium"
 }
 
 variable "min_size" {
@@ -55,6 +52,11 @@ variable "min_size" {
 variable "max_size" {
   type    = number
   default = 2
+}
+
+variable "enable_autoscaling" {
+  type    = bool
+  default = true 
 }
 
 variable "repo_url" {

@@ -16,9 +16,7 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-locals {
-  name_prefix = lower(replace(var.cluster_name, "_", "-"))
-}
+
 # -------------------------------
 # NETWORKING
 # -------------------------------
@@ -32,26 +30,16 @@ resource "aws_vpc" "lab" {
   }
 }
 
-resource "aws_subnet" "subnet_1" {
+resource "aws_subnet" "subnets" {
+  for_each = var.subnets
+
   vpc_id                  = aws_vpc.lab.id
-  cidr_block              = var.subnet_1_cidr
-  availability_zone       = data.aws_availability_zones.available.names[0]
+  cidr_block              = each.value.cidr_block
+  availability_zone       = data.aws_availability_zones.available.names[each.value.az_index]
   map_public_ip_on_launch = true
 
   tags = {
-    Name        = "${local.name_prefix}-subnet-1"
-    Environment = var.environment
-  }
-}
-
-resource "aws_subnet" "subnet_2" {
-  vpc_id                  = aws_vpc.lab.id
-  cidr_block              = var.subnet_2_cidr
-  availability_zone       = data.aws_availability_zones.available.names[1]
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name        = "${local.name_prefix}-subnet-2"
+    Name        = "${local.name_prefix}-${each.key}"
     Environment = var.environment
   }
 }
@@ -73,15 +61,13 @@ resource "aws_route_table" "public" {
   }
 }
 
-resource "aws_route_table_association" "subnet_1" {
-  subnet_id      = aws_subnet.subnet_1.id
+resource "aws_route_table_association" "subnets" {
+  for_each      = aws_subnet.subnets
+  
+  subnet_id     = each.value.id
   route_table_id = aws_route_table.public.id
 }
-
-resource "aws_route_table_association" "subnet_2" {
-  subnet_id      = aws_subnet.subnet_2.id
-  route_table_id = aws_route_table.public.id
-}
+  
 
 # -------------------------------
 # SECURITY GROUPS
@@ -121,7 +107,7 @@ resource "aws_security_group" "sg" {
 resource "aws_launch_template" "lt" {
   name_prefix   = "${var.cluster_name}-lt-"
   image_id      = data.aws_ami.ubuntu.id
-  instance_type = var.instance_type
+  instance_type = local.instance_type
 
   vpc_security_group_ids = [aws_security_group.sg.id]
 
@@ -144,7 +130,7 @@ resource "aws_launch_template" "lt" {
 resource "aws_lb" "alb" {
   name               = "${local.name_prefix}-alb"
   load_balancer_type = "application"
-  subnets            = [aws_subnet.subnet_1.id, aws_subnet.subnet_2.id]
+  subnets            = values(aws_subnet.subnets)[*].id
   security_groups    = [aws_security_group.sg.id]
 }
 
@@ -171,10 +157,12 @@ resource "aws_lb_listener" "listener" {
 # -------------------------------
 
 resource "aws_autoscaling_group" "asg" {
+  count = var.enable_autoscaling ? 1: 0
+
   min_size            = var.min_size
   max_size            = var.max_size
   desired_capacity    = var.min_size
-  vpc_zone_identifier = [aws_subnet.subnet_1.id, aws_subnet.subnet_2.id]
+  vpc_zone_identifier = values(aws_subnet.subnets)[*].id
 
   launch_template {
     id      = aws_launch_template.lt.id

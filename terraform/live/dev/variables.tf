@@ -4,6 +4,17 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
+#variable "servers" {
+#  description = "Map of servers with instancs types"
+#  type        = map(string)
+
+ # default = {
+   # web   = "t3.micro"
+   # api   =" t3.small"
+   # db    = "t3.medium"
+  #}
+#}
+
 variable "cluster_name" {
   description = "Name used for all resources"
   type        = string
@@ -21,16 +32,12 @@ variable "vpc_cidr" {
   default     = "10.0.0.0/16"
 }
 
-variable "subnet_1_cidr" {
-  type    = string
-  default = "10.0.1.0/24"
+variable "subnets" {
+  type         = map(object({
+    cidr_block = string
+    az_index   = number
+  }))
 }
-
-variable "subnet_2_cidr" {
-  type    = string
-  default = "10.0.2.0/24"
-}
-
 
 variable "server_port" {
   type    = number
@@ -56,6 +63,11 @@ variable "min_size" {
 variable "max_size" {
   type    = number
   default = 4
+}
+
+variable "enable_autoscaling" {
+  type    = bool
+  default = true 
 }
 
 variable "repo_url" {

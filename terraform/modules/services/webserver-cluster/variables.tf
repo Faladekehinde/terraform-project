@@ -6,7 +6,6 @@ variable "cluster_name" {
 variable "environment" {
   description = "Environment name (dev or production)"
   type        = string
-  default     = "dev"
 }
 
 variable "aws_region" {
@@ -49,15 +48,18 @@ variable "vpc_cidr" {
   type        = string
 }
 
-variable "subnet_1_cidr" {
-  description = "Subnet 1 CIDR"
-  type        = string
+variable "subnets" {
+  type = map(object({
+    cidr_block = string
+    az_index   = number
+  }))
 }
 
-variable "subnet_2_cidr" {
-  description = "Subnet 2 CIDR"
-  type        = string
+variable "enable_autoscaling" {
+  type    = bool
+  default = false 
 }
+
 
 variable "repo_url" {
   description = "GitHub repo for web app"
