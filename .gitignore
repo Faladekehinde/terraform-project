@@ -3,7 +3,8 @@
 *.tfstate
 *.tfstate.*
 crash.log
-
+tfplan
+*.tfplan
 .terraform.lock.hcl
 
 # OS files
