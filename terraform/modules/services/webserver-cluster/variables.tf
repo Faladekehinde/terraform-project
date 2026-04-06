@@ -1,17 +1,33 @@
+variable "aws_region" {
+  description = "AWS region"
+  type        = string
+}
+
 variable "cluster_name" {
   description = "Name used for all resources"
   type        = string
 }
 
 variable "environment" {
-  description = "Environment name (dev or production)"
+  description = "dev, staging, or production"
   type        = string
+
+  validation {
+    condition     = contains(["dev", "staging", "production"], var.environment)
+    error_message = "Evironment must be dev, staging, or production."
+  }
 }
 
-variable "aws_region" {
-  description = "AWS region"
-  type        = string
+variable "create_dns_record" {
+  type    = bool
+  default = false
 }
+
+variable "use_existing_vpc" {
+  type    = bool
+  default = false
+}
+
 
 variable "instance_type" {
   description = "EC2 instance type"
@@ -57,7 +73,13 @@ variable "subnets" {
 
 variable "enable_autoscaling" {
   type    = bool
-  default = false 
+  default = true 
+}
+
+variable "route53_zone_id" {
+  description = "Route53 hosted zone ID"
+  type        = string
+  default     = "null"
 }
 
 

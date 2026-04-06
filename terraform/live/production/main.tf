@@ -1,10 +1,14 @@
 module "webserver_cluster" {
   source = "../../modules/services/webserver-cluster"
+  
   # production stays pinned to the stable version
   cluster_name = var.cluster_name
   environment  = var.environment
   aws_region   = var.aws_region
-  enable_autoscaling = true
+ 
+
+  create_dns_record   = false
+  use_existing_vpc    = false
 
   instance_type = local.instance_type
   min_size      = var.min_size

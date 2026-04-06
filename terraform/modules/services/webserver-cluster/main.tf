@@ -16,12 +16,19 @@ data "aws_ami" "ubuntu" {
   }
 }
 
+data "aws_vpc" "existing" {
+  count = var.use_existing_vpc ? 1 : 0
+
+  default = true
+}
+
 
 # -------------------------------
 # NETWORKING
 # -------------------------------
 
 resource "aws_vpc" "lab" {
+  count      = var.use_existing_vpc ? 0 : 1
   cidr_block = var.vpc_cidr
 
   tags = {
@@ -33,7 +40,7 @@ resource "aws_vpc" "lab" {
 resource "aws_subnet" "subnets" {
   for_each = var.subnets
 
-  vpc_id                  = aws_vpc.lab.id
+  vpc_id                  = local.vpc_id
   cidr_block              = each.value.cidr_block
   availability_zone       = data.aws_availability_zones.available.names[each.value.az_index]
   map_public_ip_on_launch = true
@@ -45,7 +52,7 @@ resource "aws_subnet" "subnets" {
 }
 
 resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.lab.id
+  vpc_id =  local.vpc_id
 
   tags = {
     Name = "${local.name_prefix}-igw"
@@ -53,7 +60,7 @@ resource "aws_internet_gateway" "igw" {
 }
 
 resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.lab.id
+  vpc_id =  local.vpc_id
 
   route {
     cidr_block = "0.0.0.0/0"
@@ -75,7 +82,7 @@ resource "aws_route_table_association" "subnets" {
 
 resource "aws_security_group" "sg" {
   name   = "${local.name_prefix}-sg"
-  vpc_id = aws_vpc.lab.id
+  vpc_id =  local.vpc_id
 
   ingress {
     from_port   = var.server_port
@@ -138,7 +145,7 @@ resource "aws_lb_target_group" "tg" {
   name     = "${local.name_prefix}-tg" 
   port     = var.server_port
   protocol = "HTTP"
-  vpc_id   = aws_vpc.lab.id
+  vpc_id   = local.vpc_id
 }
 
 resource "aws_lb_listener" "listener" {
@@ -159,9 +166,9 @@ resource "aws_lb_listener" "listener" {
 resource "aws_autoscaling_group" "asg" {
   count = var.enable_autoscaling ? 1: 0
 
-  min_size            = var.min_size
-  max_size            = var.max_size
-  desired_capacity    = var.min_size
+  min_size            = local.min_size
+  max_size            = local.max_size
+  desired_capacity    = local.min_size
   vpc_zone_identifier = values(aws_subnet.subnets)[*].id
 
   launch_template {
@@ -169,6 +176,43 @@ resource "aws_autoscaling_group" "asg" {
     version = "$Latest"
   }
 
+  tag {
+    key                     = "My-server"
+    value                   = "${var.environment}-asg"
+    propagate_at_launch     = true
+  }
+
   target_group_arns = [aws_lb_target_group.tg.arn]
+}
+
+
+resource "aws_cloudwatch_metric_alarm" "high_cpu" {
+  count = local.enable_monitoring ? 1 : 0
+
+  alarm_name         = "${var.environment}-high-cpu"
+  comparison_operator      = "GreaterThanThreshold"
+  evaluation_periods       = 2
+  metric_name              = "CPUUtilization" 
+  namespace                = "AWS/EC2"
+  period                   = 120
+  statistic                = "Average"
+  threshold                = 80
+
+  alarm_description = "CPU usage too high"
+}
+
+
+resource "aws_route53_record" "app" {
+  count = local.is_production ? 1 : 0
+
+  zone_id = var.route53_zone_id
+  name = "app.terraform.com"
+  type = "A"
+
+  alias {
+    name                   = aws_lb.alb.dns_name
+    zone_id                = aws_lb.alb.zone_id
+    evaluate_target_health = true 
+  }  
 }
 

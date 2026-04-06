@@ -1,5 +1,5 @@
 cluster_name = "web-prod"
-environment  = "prod"
+environment  = "production"
 aws_region   = "us-east-2"
 enable_autoscaling = true
 

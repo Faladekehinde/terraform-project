@@ -12,3 +12,6 @@ output "alb_dns_name" {
   description = "DNS name of the Application Load Balancer"
 }
 
+output "alarm_arn" {
+  value = local.enable_monitoring ? aws_cloudwatch_metric_alarm.high_cpu[0].arn : null
+}

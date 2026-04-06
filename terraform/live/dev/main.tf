@@ -5,13 +5,17 @@ module "webserver_cluster" {
   environment  = var.environment
   aws_region   = var.aws_region
 
+  create_dns_record   = false
+  use_existing_vpc    = false
+
   instance_type = local.instance_type
+  
   min_size      = var.min_size
   max_size      = var.max_size
 
   vpc_cidr      = var.vpc_cidr
   subnets       = var.subnets
-  enable_autoscaling = var.enable_autoscaling
+  
   repo_url = var.repo_url
 }
 
