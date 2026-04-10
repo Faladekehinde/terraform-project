@@ -3,6 +3,7 @@ module "webserver_cluster" {
   
   cluster_name = var.cluster_name
   environment  = var.environment
+  active_environment = var.active_environment
   aws_region   = var.aws_region
 
   create_dns_record   = false
@@ -15,7 +16,8 @@ module "webserver_cluster" {
 
   vpc_cidr      = var.vpc_cidr
   subnets       = var.subnets
-  
+  server_text   = var.server_text
   repo_url = var.repo_url
+
 }
 

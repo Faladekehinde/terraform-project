@@ -18,6 +18,13 @@ variable "environment" {
   }
 }
 
+variable "active_environment" {
+  description = "which environment receives the traffic"
+  type        =  string
+  default     = "blue"
+  
+}
+
 variable "create_dns_record" {
   type    = bool
   default = false
@@ -28,11 +35,15 @@ variable "use_existing_vpc" {
   default = false
 }
 
-
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string
   default     = "t3.micro"
+}
+
+variable "server_text" {
+  description = "Text to display on the server (v1/v2)"
+  type        = string
 }
 
 variable "min_size" {

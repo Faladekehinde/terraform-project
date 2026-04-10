@@ -16,6 +16,7 @@ module "webserver_cluster" {
 
   vpc_cidr      = var.vpc_cidr
   subnets       = var.subnets
+  server_text   = var.server_text
 
   repo_url = var.repo_url
 }

@@ -17,8 +17,11 @@ subnets = {
 }
 repo_url = "https://github.com/CeeyIT-Solutions/food3.git"
 
-instance_type = "t2.micro"
+instance_type      = "t3.medium"
 enable_autoscaling = true
+active_environment = "blue"
+server_text        = "Hello from BLUE"
+min_size           = 2
+max_size           = 4
 
-min_size      = 2
-max_size      = 4
+

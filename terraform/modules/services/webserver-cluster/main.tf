@@ -125,9 +125,22 @@ resource "aws_launch_template" "lt" {
     systemctl start apache2
     systemctl enable apache2
     rm -rf /var/www/html/*
-    git clone ${var.repo_url} /var/www/html
+    cat > /var/www/html/index.html <<EOT
+    <h1>${var.server_text}</h1>
+    <p>Environment: ${var.environment}</p>
+    EOT
+    
   EOF
   )
+
+    lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = {
+      version = var.server_text
+    }
+
 }
 
 # -------------------------------
@@ -146,7 +159,41 @@ resource "aws_lb_target_group" "tg" {
   port     = var.server_port
   protocol = "HTTP"
   vpc_id   = local.vpc_id
+
+  # Connection Draining: Wait 30s for active requests to finish 
+  # before fully terminating the instance.
+  deregistration_delay = 30
+
+  health_check {
+    path                = "/"
+    protocol            = "HTTP"
+    matcher             = "200"
+    interval            = 15
+    timeout             = 3
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  }
 }
+#GREEN
+resource "aws_lb_target_group" "green" {
+  name        = "${var.cluster_name}-green"
+  port        = var.server_port
+  protocol    = "HTTP"
+  vpc_id      = local.vpc_id
+
+  deregistration_delay = 30
+
+  health_check {
+    path                = "/"
+    protocol            = "HTTP"
+    matcher             = "200"
+    interval            = 15
+    timeout             = 3
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  } 
+}
+
 
 resource "aws_lb_listener" "listener" {
   load_balancer_arn = aws_lb.alb.arn
@@ -155,7 +202,7 @@ resource "aws_lb_listener" "listener" {
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg.arn
+    target_group_arn = var.active_environment == "blue" ?  aws_lb_target_group.tg.arn : aws_lb_target_group.green.arn 
   }
 }
 
@@ -163,9 +210,18 @@ resource "aws_lb_listener" "listener" {
 # AUTO SCALING GROUP
 # -------------------------------
 
-resource "aws_autoscaling_group" "asg" {
-  count = var.enable_autoscaling ? 1: 0
+resource "random_id" "server" {
+  keepers = {
+    # A new random ID is generated when the launch configuration changes
+    ami_id = data.aws_ami.ubuntu.id
+  }
+  byte_length = 8
+}
 
+resource "aws_autoscaling_group" "asg" {
+  count = var.enable_autoscaling ? 1 : 0
+
+  name_prefix         = "${var.cluster_name}-asg"
   min_size            = local.min_size
   max_size            = local.max_size
   desired_capacity    = local.min_size
@@ -176,13 +232,65 @@ resource "aws_autoscaling_group" "asg" {
     version = "$Latest"
   }
 
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  instance_refresh {
+    strategy = "Rolling"
+    triggers = ["launch_template"]
+    
+    preferences {
+      min_healthy_percentage = 100
+    }
+  }
+
   tag {
-    key                     = "My-server"
-    value                   = "${var.environment}-asg"
-    propagate_at_launch     = true
+    key                 = "My-server"
+    value               = "${var.environment}-asg"
+    propagate_at_launch = true
   }
 
   target_group_arns = [aws_lb_target_group.tg.arn]
+  health_check_type = "ELB"
+}
+
+
+resource "aws_autoscaling_group" "green" {
+  count = var.enable_autoscaling ? 1 : 0
+
+  name_prefix         = "${var.cluster_name}-asg"
+  min_size            = local.min_size
+  max_size            = local.max_size
+  desired_capacity    = local.min_size
+  vpc_zone_identifier = values(aws_subnet.subnets)[*].id
+
+  launch_template {
+    id      = aws_launch_template.lt.id
+    version = "$Latest"
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  instance_refresh {
+    strategy = "Rolling"
+    triggers = ["launch_template"]
+    
+    preferences {
+      min_healthy_percentage = 100
+    }
+  }
+
+  tag {
+    key                 = "My-server"
+    value               = "${var.environment}-asg"
+    propagate_at_launch = true
+  }
+
+  target_group_arns = [aws_lb_target_group.green.arn]
+  health_check_type = "ELB"
 }
 
 
@@ -199,20 +307,5 @@ resource "aws_cloudwatch_metric_alarm" "high_cpu" {
   threshold                = 80
 
   alarm_description = "CPU usage too high"
-}
-
-
-resource "aws_route53_record" "app" {
-  count = local.is_production ? 1 : 0
-
-  zone_id = var.route53_zone_id
-  name = "app.terraform.com"
-  type = "A"
-
-  alias {
-    name                   = aws_lb.alb.dns_name
-    zone_id                = aws_lb.alb.zone_id
-    evaluate_target_health = true 
-  }  
 }
 

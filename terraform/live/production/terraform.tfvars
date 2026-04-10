@@ -17,6 +17,8 @@ subnets = {
 }
 repo_url = "https://github.com/CeeyIT-Solutions/ecomm-3.git"
 
-instance_type = "t3.medium"
+instance_type = "t3.micro"
+server_text        = "Hello World v2"
+active_environment  = "green"
 min_size      = 2
 max_size      = 6

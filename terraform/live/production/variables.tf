@@ -15,6 +15,18 @@ variable "environment" {
   default     = "prod"
 }
 
+variable "active_environment" {
+  type   = string
+  default = "green"
+  
+}
+
+variable "server_text" {
+  description  = "web page name"
+  type         =  string   
+  
+}
+
 variable "vpc_cidr" {
   description = "VPC CIDR"
   type        = string
@@ -41,7 +53,7 @@ variable "ssh_port" {
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string
-  default     = "t3.medium"
+  default     = "t3.micro"
 }
 
 variable "min_size" {

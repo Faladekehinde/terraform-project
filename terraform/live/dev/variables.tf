@@ -26,6 +26,17 @@ variable "environment" {
   default     = "dev"
 }
 
+variable "active_environment" {
+  type   = string
+  
+}
+
+variable "server_text" {
+  description  = "web page name"
+  type         =  string   
+  
+}
+
 variable "vpc_cidr" {
   description = "VPC CIDR"
   type        = string
