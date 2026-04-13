@@ -6,6 +6,13 @@ data "aws_region" "current" {}
 
 data "aws_availability_zones" "available" {}
 
+data "aws_secretsmanager_secret" "db_credentials" {
+  name = "${var.environment}/db/credentials"
+}
+data "aws_secretsmanager_secret_version" "db_credentials" {
+  secret_id = data.aws_secretsmanager_secret.db_credentials.id
+}
+
 data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["099720109477"]
@@ -307,5 +314,18 @@ resource "aws_cloudwatch_metric_alarm" "high_cpu" {
   threshold                = 80
 
   alarm_description = "CPU usage too high"
+}
+
+resource "aws_db_instance" "appdb" {
+  engine              = "mysql"
+  engine_version      = "8.0"
+  instance_class      = "db.t3.micro"
+  db_name             = "appdb"
+
+  allocated_storage = 10
+  skip_final_snapshot = true
+
+  username = local.db_credentials["username"]
+  password = local.db_credentials["password"]
 }
 

@@ -15,3 +15,8 @@ output "alb_dns_name" {
 output "alarm_arn" {
   value = local.enable_monitoring ? aws_cloudwatch_metric_alarm.high_cpu[0].arn : null
 }
+
+output "db_endpoint" {
+  value = aws_db_instance.appdb.endpoint
+}
+

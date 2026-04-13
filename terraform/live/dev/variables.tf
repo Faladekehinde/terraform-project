@@ -37,6 +37,7 @@ variable "server_text" {
   
 }
 
+
 variable "vpc_cidr" {
   description = "VPC CIDR"
   type        = string

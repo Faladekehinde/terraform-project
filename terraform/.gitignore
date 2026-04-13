@@ -2,10 +2,14 @@
 .terraform/
 *.tfstate
 *.tfstate.*
+*.tfstate.backup
+
 crash.log
 tfplan
 *.tfplan
-
+*.tfvars
+override.tf
+override.tf.json
 .terraform.lock.hcl
 
 # OS files

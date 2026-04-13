@@ -1,13 +1,12 @@
 module "webserver_cluster" {
   source      = "../../modules/services/webserver-cluster"
   
-  cluster_name = var.cluster_name
-  environment  = var.environment
+  cluster_name       = var.cluster_name
+  environment        = var.environment
   active_environment = var.active_environment
-  aws_region   = var.aws_region
-
-  create_dns_record   = false
-  use_existing_vpc    = false
+  aws_region         = var.aws_region
+  create_dns_record  = false
+  use_existing_vpc   = false
 
   instance_type = local.instance_type
   
